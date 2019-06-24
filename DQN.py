@@ -9,6 +9,7 @@ from operator import add
 class DQNAgent(object):
 
     def __init__(self):
+        self.dimInput = 6
         self.reward = 0
         self.gamma = 0.9
         self.short_memory = np.array([])
@@ -20,15 +21,23 @@ class DQNAgent(object):
         self.actual = []
         self.memory = []
 
-    def get_state(self, road, car, coins):
 
-        state = [car.change == -120, car.change == 120, coins.x_coins < car.x, coins.x_coins > car.x]
+    def get_state(self, car, coins, box, road):
+
+        state = [car.change == -20, 
+                 car.change == 20, 
+                 coins.x_coins <= car.x, 
+                 coins.x_coins > car.x, 
+                 box.x_box <= car.x, 
+                 box.x_box > car.x]
 
         for i in range(len(state)):
             if state[i]:
                 state[i] = 1
             else:
                 state[i] = 0
+        
+        self.dimInput = len(state)
 
         return np.asarray(state)
 
@@ -36,14 +45,16 @@ class DQNAgent(object):
         self.reward = 0
         if crashed:
             self.reward = -10
+            print(self.reward)
             return self.reward
         if car.reached:
             self.reward = 10
+            print(self.reward)
         return self.reward
 
     def network(self, weights=None):
         model = Sequential()
-        model.add(Dense(output_dim=120, activation='relu', input_dim=4))
+        model.add(Dense(output_dim=120, activation='relu', input_dim=self.dimInput))
         model.add(Dropout(0.15))
         model.add(Dense(output_dim=120, activation='relu'))
         model.add(Dropout(0.15))
@@ -76,7 +87,11 @@ class DQNAgent(object):
     def train_short_memory(self, state, action, reward, next_state, done):
         target = reward
         if not done:
-            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, 4)))[0])
-        target_f = self.model.predict(state.reshape((1, 4)))
+            target = reward + self.gamma * np.amax(self.model.predict(next_state.reshape((1, self.dimInput)))[0])
+        target_f = self.model.predict(state.reshape((1, self.dimInput)))
         target_f[0][np.argmax(action)] = target
-        self.model.fit(state.reshape((1, 4)), target_f, epochs=1, verbose=0)
+        self.model.fit(state.reshape((1, self.dimInput)), target_f, epochs=1, verbose=0)
+
+
+
+
