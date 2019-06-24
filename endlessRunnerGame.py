@@ -6,9 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from DQN import DQNAgent
 
-
-display_option =  True
-speed = 1000
+speed = 1
 
 class Road:
     pygame.display.set_caption('Endless Runner Game 1.0')
@@ -16,15 +14,15 @@ class Road:
     def __init__(self, width, height):
         self.width = width
         self.height = width
-        self.coins = Coins()
+        self.coins = Coins(self)
         self.car = Car(self)
         self.score = 0
         
         self.crashed = False
         self.gameDisplay = pygame.display.set_mode((width, height))
         self.backGround1 = pygame.image.load("images/backGround1.png")
-        #self.backGround2 = pygame.image.load("images/backGround2.png")
-        #self.backGround3 = pygame.image.load("images/backGround3.png")
+        self.backGround2 = pygame.image.load("images/backGround2.png")
+        self.backGround3 = pygame.image.load("images/backGround3.png")
 
 
 class Car(object):
@@ -42,7 +40,7 @@ class Car(object):
         self.coins = 1
         self.reached = False
 
-        self.change = 120
+        self.change = 20
 
     def update_position(self, x, y):
 
@@ -53,7 +51,7 @@ class Car(object):
             self.position[-1][0] = x
             self.position[-1][1] = y
 
-    def do_move(self, move, x, y, road, coins):
+    def moveCar(self, move, x, y, road, coins):
         moving = self.change
 
         if self.reached:
@@ -70,7 +68,6 @@ class Car(object):
         elif np.array_equal(move, [0, 0, 1]):
             moving = -self.change
 
-        print(moving)
         self.x = x + moving
 
         if self.x < 0 or self.x > road.width - 120:
@@ -79,7 +76,7 @@ class Car(object):
         reach(self, coins, road)
         self.update_position(self.x, self.y)
 
-    def display_Car(self, x, y, coins, road):
+    def displayCar(self, x, y, coins, road):
         self.position[-1][0] = x
         self.position[-1][1] = y
 
@@ -88,48 +85,46 @@ class Car(object):
                 x_temp, y_temp = self.position[len(self.position) - 1 - i]
                 road.gameDisplay.blit(self.image, (x_temp, y_temp))
 
-            update_screen()
+            pygame.display.update()
         else:
             pygame.time.wait(300)
 
 
 class Coins(object):
 
-    def __init__(self):
-        self.x_coins = 240
-        self.y_coins = 200
-        self.image = pygame.image.load('images/coins.png')
+    def __init__(self, road):
+        self.x_coins = randint(int(road.width * 0.45), int(road.width * 0.55))
+        self.y_coins = int(road.width*0.21)
+        self.image = pygame.image.load('images/coinL.png')
+        self.image = pygame.transform.scale(image, (int(34*0.2),int(42*0.2)))
 
-    def coins_coord(self, road, car):
-        x_rand = randint(20, road.width - 40)
-        self.x_coins = x_rand - x_rand % 20
-        y_rand = randint(20, road.height - 40)
-        self.y_coins = y_rand - y_rand % 20
-        if [self.x_coins, self.y_coins] not in car.position:
-            return self.x_coins, self.y_coins
-        else:
-            self.coins_coord(road, car)
+    def moveCoins(self):
+        pass
 
-    def display_coins(self, x, y, road):
+    def coinsPosition(self, road):
+        self.x_coins = randint(road.width * 0.4, road.width * 0.6)
+        self.y_coins = road.height * 0.3
+
+    def displayCoins(self, x, y, road):
         road.gameDisplay.blit(self.image, (x, y))
-        update_screen()
+        pygame.display.update()
 
 
 def reach(car, coins, road):
     if car.x == coins.x_coins and car.y == coins.y_coins:
-        coins.coins_coord(road, car)
+        coins.coinsPosition(road)
         car.reached = True
         road.score = road.score + 1
 
 
-def get_record(score, record):
+def getRecord(score, record):
         if score >= record:
             return score
         else:
             return record
 
 
-def display_Road(road, score, record, background=1):
+def display(car, coins, road, record, background=1):
     if background == 1:
         road.gameDisplay.blit(road.backGround1, (0, 0))
     if background == 2:
@@ -137,21 +132,14 @@ def display_Road(road, score, record, background=1):
     if background == 3:
         road.gameDisplay.blit(road.backGround3, (0, 0))
 
-
-def display(car, coins, road, record):
-    display_Road(road, road.score, record,)
-    car.display_Car(car.position[-1][0], car.position[-1][1], car.coins, road)
-    coins.display_coins(coins.x_coins, coins.y_coins, road)
-
-
-def update_screen():
-    pygame.display.update()
-
+    car.displayCar(car.position[-1][0], car.position[-1][1], car.coins, road)
+    coins.displayCoins(coins.x_coins, coins.y_coins, road)
+ 
 
 def startGame(car, road, coins, agent):
-    preState = agent.get_state(road, car, coins)  # [0 0 0 0 0 0 0 0 0 1 0 0 0 1 0 0]
+    preState = agent.get_state(road, car, coins)
     action = [0, 1, 0]
-    car.do_move(action, car.x, car.y, road, coins)
+    car.moveCar(action, car.x, car.y, road, coins)
     posState = agent.get_state(road, car, coins)
     reward1 = agent.set_reward(car, road.crashed)
     agent.remember(preState, action, reward1, posState, road.crashed)
@@ -172,8 +160,7 @@ def run():
 
         # Perform first move
         startGame(myCar, road, myCoins, agent)
-        if display_option:
-            display(myCar, myCoins, road, record)
+        display(myCar, myCoins, road, record)
 
         while not road.crashed:
                  
@@ -191,7 +178,7 @@ def run():
                 prediction = agent.model.predict(state_old.reshape((1, 4)))
                 final_move = to_categorical(np.argmax(prediction[0]), num_classes=3)    
             #perform new move and get new state
-            myCar.do_move(final_move, myCar.x, myCar.y, road, myCoins)
+            myCar.moveCar(final_move, myCar.x, myCar.y, road, myCoins)
             state_new = agent.get_state(road, myCar, myCoins)
             #set treward for the new state
             reward = agent.set_reward(myCar, road.crashed)
@@ -201,10 +188,9 @@ def run():
             
             # store the new data into a long term memory
             agent.remember(state_old, final_move, reward, state_new, road.crashed)
-            record = get_record(road.score, record)
-            if display_option:
-                display(myCar, myCoins, road, record)
-                pygame.time.wait(speed)
+            record = getRecord(road.score, record)
+            display(myCar, myCoins, road, record)
+            pygame.time.wait(speed)
         
         agent.replay_new(agent.memory)
         countGames += 1
