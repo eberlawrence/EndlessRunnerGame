@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from DQN import DQNAgent
 
-speed = 80
+speed = 10
 
 class Road:
     pygame.display.set_caption('Endless Runner Game 1.0')
@@ -82,72 +82,94 @@ class Coins(object):
 
     def __init__(self, road):
         self.i = 0
-        self.x_coins = randint(int(road.width * 0.475), int(road.width * 0.525))
-        self.y_coins = int(road.width*0.215)        
+        self.rand = 0
+        self.x_coins = 0
+        self.y_coins = 0
+
+    def firstPosition(self, road):
+        self.y_coins = int(road.width*0.215)
+        self.rand = randint(1, 4)
+        if self.rand == 1:
+            self.x_coins = (road.width * 0.4750) + 4
+        if self.rand == 2:
+            self.x_coins = (road.width * 0.4875) + 4
+        if self.rand == 3:
+            self.x_coins = (road.width * 0.5) + 4
+        if self.rand == 4:
+            self.x_coins = (road.width * 0.5125) + 4
 
     def moveCoins(self, road):
-        pos = [1, 5, 10, 15, 25, 30, 35, 40, 45, 50]
+        pos = [0, 5, 10, 15, 25, 30, 35, 40, 45, 50]
         esc = [0.10, 0.12, 0.16, 0.22, 0.30, 0.40, 0.52, 0.66, 0.82, 1.0]
-        if self.x_coins <= road.width/2:            
+        if self.i == 0:
+            self.firstPosition(road)
+        if self.rand == 1:                        
             self.imageOriginal = pygame.image.load('images/coinL.png')
-            self.x_coins -= pos[self.i] * 0.95
-        else:
+            self.x_coins -= pos[self.i] * 0.95       
+        if self.rand == 2:
+            self.imageOriginal = pygame.image.load('images/coinL.png')
+            self.x_coins -= pos[self.i] * 0.2                  
+        if self.rand == 3:
             self.imageOriginal = pygame.image.load('images/coinR.png')
-            self.x_coins += pos[self.i] * 0.95
+            self.x_coins += pos[self.i] * 0.2
+        if self.rand == 4:
+            self.imageOriginal = pygame.image.load('images/coinR.png')
+            self.x_coins += pos[self.i] * 0.95              
+
         self.size = list(self.imageOriginal.get_rect().size)
         self.image = pygame.transform.scale(self.imageOriginal, (int(self.size[0] * esc[self.i]), int(self.size[1] * esc[self.i]))) 
         self.y_coins += pos[self.i]
         self.i += 1
+
         if self.i == 10:
-            self.x_coins = randint(int(road.width * 0.45), int(road.width * 0.55))
-            self.y_coins = int(road.width*0.215)            
+            self.firstPosition(road)                        
             self.i = 0
 
     def displayCoins(self, x, y, road):
         if self.i == 0:
             pass        
-        else:        
+        else:
             road.gameDisplay.blit(self.image, (x, y))
+
 
 
 class Box(object):
 
     def __init__(self, road):
         self.i = 0
-        self.rand = randint(1, 4)
-        self.x_box = randint(1, 4)
-        self.x_box = randint(int(road.width * 0.475), int(road.width * 0.525))
+        self.rand = 0
+        self.x_box = 0
+        self.y_box = 0
+
+    def firstPosition(self, road):
         self.y_box = int(road.width*0.215)
-             
+        self.rand = randint(1, 4)
+        if self.rand == 1:
+            self.x_box = (road.width * 0.4750) + 4
+        if self.rand == 2:
+            self.x_box = (road.width * 0.4875) + 4
+        if self.rand == 3:
+            self.x_box = (road.width * 0.5) + 4
+        if self.rand == 4:
+            self.x_box = (road.width * 0.5125) + 4
 
     def moveBox(self, road):
         pos = [0, 5, 10, 15, 25, 30, 35, 40, 45, 50]
         esc = [0.10, 0.12, 0.16, 0.22, 0.30, 0.40, 0.52, 0.66, 0.82, 1.0]
-        
-        if self.rand == 1:
-            self.x_box = 
+        if self.i == 0:
+            self.firstPosition(road)
+        if self.rand == 1:                        
+            self.imageOriginal = pygame.image.load('images/boxLL.png')
+            self.x_box -= pos[self.i] * 0.95       
         if self.rand == 2:
-
+            self.imageOriginal = pygame.image.load('images/boxL.png')
+            self.x_box -= pos[self.i] * 0.2                  
         if self.rand == 3:
-
+            self.imageOriginal = pygame.image.load('images/boxRR.png')
+            self.x_box += pos[self.i] * 0.2
         if self.rand == 4:
-
-
-
-        if self.x_box <= road.width/2:            
-            if self.x_box <= road.width/2 - 10:            
-                self.imageOriginal = pygame.image.load('images/boxLL.png')
-                self.x_box -= pos[self.i] * 0.95       
-            else:
-                self.imageOriginal = pygame.image.load('images/boxL.png')
-                self.x_box -= pos[self.i] * 0.2                  
-        else:
-            if self.x_box <= road.width/2 + 10: 
-                self.imageOriginal = pygame.image.load('images/boxRR.png')
-                self.x_box += pos[self.i] * 0.95
-            else:
-                self.imageOriginal = pygame.image.load('images/boxR.png')
-                self.x_box += pos[self.i] * 0.2              
+            self.imageOriginal = pygame.image.load('images/boxR.png')
+            self.x_box += pos[self.i] * 0.95              
 
         self.size = list(self.imageOriginal.get_rect().size)
         self.image = pygame.transform.scale(self.imageOriginal, (int(self.size[0] * esc[self.i]), int(self.size[1] * esc[self.i]))) 
@@ -155,8 +177,7 @@ class Box(object):
         self.i += 1
 
         if self.i == 10:
-            self.x_box = randint(int(road.width * 0.45), int(road.width * 0.55))
-            self.y_box = int(road.width*0.215)            
+            self.firstPosition(road)                        
             self.i = 0
 
     def displayBox(self, x, y, road):
