@@ -246,7 +246,7 @@ def run():
     countGames = 0    
     countGa = 0
     record = 0
-    while countGames < 150:
+    while countGames < 10000:
         print("GAME " + str(countGames))
         road = Road(800, 450)
         myCar = road.car
