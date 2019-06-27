@@ -6,7 +6,7 @@ import numpy as np
 from operator import add
 
 
-class DQNAgent(object):
+class deep_QNetwork(object):
 
     def __init__(self):
         self.dimInput = 6

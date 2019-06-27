@@ -1,12 +1,22 @@
+'''
+Eber Lawrence Souza Gouveia
+Federal University of Uberlandia - UFU
+Biomedical Engineering Lab - BioLab
+
+To do:
+Create the coins and box asynchronously
+One or more coins and box per time
+
+'''
 import pygame
 from random import randint
 import numpy as np
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 import seaborn as sns
-from DQN import DQNAgent
+from reinforcementLearning import deep_QNetwork
 
-speed = 10
+speed = 1
 
 class Road:
     pygame.display.set_caption('Endless Runner Game 1.0')
@@ -42,7 +52,7 @@ class Car(object):
 
         self.change = 20
         
-    def moveCar(self, move, x, y, road, coins):
+    def moveCar(self, move, x, y, coins, box, road):
         moving = self.change
 
         if self.reached:
@@ -60,7 +70,7 @@ class Car(object):
 
         self.x = x + moving
 
-        reachOrCrash(self, coins, road)
+        reachOrCrash(self, coins, box, road)
 
 
     def displayCar(self, x, y, coins, road):
@@ -100,7 +110,8 @@ class Coins(object):
 
     def moveCoins(self, road):
         pos = [0, 5, 10, 15, 25, 30, 35, 40, 45, 50]
-        esc = [0.10, 0.12, 0.16, 0.22, 0.30, 0.40, 0.52, 0.66, 0.82, 1.0]
+        esc = [0.10, 0.14, 0.22, 0.34, 0.50, 0.70, 0.94, 1.22, 1.54, 1.9]
+        #esc = [0.10, 0.14, 0.22, 0.34, 0.50, 0.70, 0.94, 1.22, 1.54, 1.0]
         if self.i == 0:
             self.firstPosition(road)
         if self.rand == 1:                        
@@ -155,7 +166,8 @@ class Box(object):
 
     def moveBox(self, road):
         pos = [0, 5, 10, 15, 25, 30, 35, 40, 45, 50]
-        esc = [0.10, 0.12, 0.16, 0.22, 0.30, 0.40, 0.52, 0.66, 0.82, 1.0]
+        esc = [0.10, 0.14, 0.22, 0.34, 0.50, 0.70, 0.94, 1.22, 1.54, 1.9]
+        #esc = [0.10, 0.14, 0.22, 0.34, 0.50, 0.70, 0.94, 1.22, 1.54, 1.0]
         if self.i == 0:
             self.firstPosition(road)
         if self.rand == 1:                        
@@ -187,10 +199,12 @@ class Box(object):
             road.gameDisplay.blit(self.image, (x, y))
 
 
-def reachOrCrash(car, coins, road):
+def reachOrCrash(car, coins, box, road):
 
     if car.x < road.width * 0.125 or car.x > (road.width * 0.875) - 120:
         car.crashed = True
+    if car.x <= box.x_box and car.x + 120 >= box.x_box + 34 and car.y >= box.y_box and car.y <= box.y_box + 50:
+        car.crashed = True   
     if car.x <= coins.x_coins and car.x + 120 >= coins.x_coins + 34 and car.y >= coins.y_coins and car.y <= coins.y_coins + 50:
         car.reached = True
         road.score = road.score + 1
@@ -214,75 +228,59 @@ def display(car, coins, box, road, record, background=1):
     box.displayBox(box.x_box, box.y_box, road)
     car.displayCar(car.x, car.y, car.coins, road)
 
-def startGame(car, coins, box, road, agent):
-    preState = agent.get_state(car, coins, box, road)
+def startGame(car, coins, box, road, nn):
+    preState = nn.get_state(car, coins, box, road)
     action = [0, 1, 0]
-    car.moveCar(action, car.x, car.y, road, coins)
+    car.moveCar(action, car.x, car.y, coins, box, road)
     coins.moveCoins(road)
     box.moveBox(road)
-    posState = agent.get_state(car, coins, box, road)
-    reward1 = agent.set_reward(car, car.crashed)
-    agent.remember(preState, action, reward1, posState, car.crashed)
-    agent.replay_new(agent.memory)
+    posState = nn.get_state(car, coins, box, road)
+    reward1 = nn.set_reward(car, car.crashed)
+    nn.remember(preState, action, reward1, posState, car.crashed)
+    nn.replay_new(nn.memory)
 
 
 def run():
     pygame.init()
-    agent = DQNAgent()
+    nn = deep_QNetwork()
     countGames = 0    
     countGa = 0
     record = 0
-    while countGames < 50:
+    while countGames < 150:
         print("GAME " + str(countGames))
-        # Initialize classes
         road = Road(800, 450)
         myCar = road.car
         myCoins = road.coins
         myBox = road.box
         backG = 1
-        # Perform first move
-        startGame(myCar, myCoins, myBox, road, agent)
+        startGame(myCar, myCoins, myBox, road, nn)
         display(myCar, myCoins, myBox, road, record, backG)
     
-        while not myCar.crashed:
+        while not myCar.crashed:           
+            nn.epsilon = 80 - countGames           
+            state_old = nn.get_state(myCar, myCoins, myBox, road)
             
-            #agent.epsilon is set to give randomness to actions
-            agent.epsilon = 80 - countGames
-            
-            #get old state
-            state_old = agent.get_state(myCar, myCoins, myBox, road)
-            
-            #perform random actions based on agent.epsilon, or choose the action
-            if randint(0, 200) < agent.epsilon:
+            if randint(0, 200) < nn.epsilon:
                 final_move = to_categorical(randint(0, 2), num_classes=3)
             else:
-                # predict action based on the old state
-                prediction = agent.model.predict(state_old.reshape((1, agent.dimInput)))
+                prediction = nn.model.predict(state_old.reshape((1, nn.dimInput)))
                 final_move = to_categorical(np.argmax(prediction[0]), num_classes=3)    
-            #perform new move and get new state
-            myCar.moveCar(final_move, myCar.x, myCar.y, road, myCoins)
+            myCar.moveCar(final_move, myCar.x, myCar.y, myCoins, myBox, road)
             myCoins.moveCoins(road)
             myBox.moveBox(road)
-            state_new = agent.get_state(myCar, myCoins, myBox, road)
-            #set treward for the new state
-            reward = agent.set_reward(myCar, myCar.crashed)
-            
-            #train short memory base on the new action and state
-            agent.train_short_memory(state_old, final_move, reward, state_new, myCar.crashed)
-            
-            # store the new data into a long term memory
-            agent.remember(state_old, final_move, reward, state_new, myCar.crashed)
+            state_new = nn.get_state(myCar, myCoins, myBox, road)
+            reward = nn.set_reward(myCar, myCar.crashed)
+            nn.train_short_memory(state_old, final_move, reward, state_new, myCar.crashed)
+            nn.remember(state_old, final_move, reward, state_new, myCar.crashed)
             record = getRecord(road.score, record)
             display(myCar, myCoins, myBox, road, record, backG)
             pygame.time.wait(speed)
             backG += 1
             if backG == 4:
                 backG = 1
-        agent.replay_new(agent.memory)
+        nn.replay_new(nn.memory)
         countGames += 1
-    agent.model.save_weights('weights.hdf5')
-
-
+    nn.model.save_weights('weights.hdf5')
 
 run()
 
