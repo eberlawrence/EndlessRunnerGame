@@ -233,7 +233,7 @@ def startGame(car, coins, box, road, nn):
     action = [0, 1, 0]
     car.moveCar(action, car.x, car.y, coins, box, road)
     coins.moveCoins(road)
-    box.moveBox(road)
+    #box.moveBox(road)
     posState = nn.get_state(car, coins, box, road)
     reward1 = nn.set_reward(car, car.crashed)
     nn.remember(preState, action, reward1, posState, car.crashed)
@@ -246,7 +246,7 @@ def run():
     countGames = 0    
     countGa = 0
     record = 0
-    while countGames < 10000:
+    while countGames < 100:
         print("GAME " + str(countGames))
         road = Road(800, 450)
         myCar = road.car
@@ -267,7 +267,7 @@ def run():
                 final_move = to_categorical(np.argmax(prediction[0]), num_classes=3)    
             myCar.moveCar(final_move, myCar.x, myCar.y, myCoins, myBox, road)
             myCoins.moveCoins(road)
-            myBox.moveBox(road)
+            #myBox.moveBox(road)
             state_new = nn.get_state(myCar, myCoins, myBox, road)
             reward = nn.set_reward(myCar, myCar.crashed)
             nn.train_short_memory(state_old, final_move, reward, state_new, myCar.crashed)
