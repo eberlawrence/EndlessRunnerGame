@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from reinforcementLearning import deep_QNetwork
 
-speed = 100
+speed = 1
 
 class Road:
     pygame.display.set_caption('Endless Runner Game 1.0')
@@ -27,7 +27,6 @@ class Road:
         self.coins = Coins(self)
         self.car = Car(self)
         self.box = Box(self)
-        self.score = 0
         
         
         self.gameDisplay = pygame.display.set_mode((width, height))
@@ -41,8 +40,7 @@ class Car(object):
     
     def __init__(self, road):
         self.x = 0.5 * road.width - 60
-        self.y = 0.45 * road.height
-        self.crashed = False
+        self.y = 0.46 * road.height        
         self.image = pygame.image.load('images/car1.png')
         self.imageM = pygame.image.load('images/car2.png')
         self.exp1 = pygame.image.load('images/explosion1.png')
@@ -51,6 +49,8 @@ class Car(object):
         self.exp4 = pygame.image.load('images/explosion4.png')
         self.coins = 1
         self.reached = False
+        self.stumbled = False
+        self.crashed = False
         self.rotation = False
         self.change = 0
         
@@ -58,7 +58,9 @@ class Car(object):
 
         if self.reached:
             self.reached = False
-            self.coins = self.coins + 1
+        if self.stumbled:
+            self.stumbled = False
+
 
         if np.array_equal(move, [1, 0, 0]):
             self.change = 0
@@ -88,22 +90,19 @@ class Car(object):
             pygame.display.update()
         else:
             crashed = False
-            explosion = 1
-            while explosion < 5:
-                if explosion == 1:
-                    road.gameDisplay.blit(self.exp1, (x+10, y-4))
-                if explosion == 2:
-                    road.gameDisplay.blit(self.exp2, (x-15, y-58))
-                if explosion == 3:
-                    road.gameDisplay.blit(self.exp3, (x-40, y-94))
-                if explosion == 4:
-                    road.gameDisplay.blit(self.exp4, (x-65, y-154))
                 
-                pygame.time.wait(100)
-                pygame.display.update()
-                explosion += 1
-                
-
+    def explosionCar(self, road, x, y, e=0):
+        if   e == 0:
+            road.gameDisplay.blit(self.exp1, (x+10, y-4))                
+        elif e == 1:
+            road.gameDisplay.blit(self.exp2, (x-15, y-58))
+        elif e == 2:
+            road.gameDisplay.blit(self.exp3, (x-40, y-94))          
+        elif e == 3:
+            road.gameDisplay.blit(self.exp4, (x-65, y-154))          
+        pygame.display.update()  
+        pygame.time.wait(150)
+           
 
 class Coins(object):
 
@@ -216,13 +215,13 @@ class Box(object):
 
 def reachOrCrash(car, coins, box, road):
 
-    if car.x < road.width * 0.125 or car.x > (road.width * 0.875) - 120:
+    if car.x < road.width * 0.1 or car.x > (road.width * 0.9) - 120:
         car.crashed = True
-    if car.x <= box.x_box and car.x + 120 >= box.x_box + 34 and car.y >= box.y_box and car.y <= box.y_box + 30:
-        car.crashed = True   
-    if car.x <= coins.x_coins and car.x + 120 >= coins.x_coins + 34 and car.y >= coins.y_coins and car.y <= coins.y_coins + 30:
+    if car.x <= box.x_box and car.x + 120 >= box.x_box + 34 and car.y >= box.y_box and car.y <= box.y_box + 40:
+        car.stumbled = True   
+    if car.x <= coins.x_coins and car.x + 120 >= coins.x_coins + 34 and car.y >= coins.y_coins and car.y <= coins.y_coins + 40:
         car.reached = True
-        road.score = road.score + 1
+        car.coins = car.coins + 1
 
 
 def getRecord(score, record):
@@ -241,19 +240,30 @@ def display(car, coins, box, road, record, background=1, count=0):
         road.gameDisplay.blit(road.backGround3, (0, 0))
     if background == 4:
         road.gameDisplay.blit(road.backGround4, (0, 0))
-    if count > 4:
+    if count > 0:
         box.displayBox(box.x_box, box.y_box, road)
     coins.displayCoins(coins.x_coins, coins.y_coins, road)
     car.displayCar(car.x, car.y, car.coins, road)
+
+    myfont = pygame.font.SysFont('Segoe UI', 20)
+    myfont_bold = pygame.font.SysFont('Segoe UI', 20, True)
+    text_score = myfont.render('SCORE: ', True, (255,255,255))
+    text_score_number = myfont.render(str(car.coins), True, (255,255,255))
+    text_highest = myfont.render('HIGHEST SCORE: ', True, (255,255,255))
+    text_highest_number = myfont_bold.render(str(record), True, (255,255,255))
+    road.gameDisplay.blit(text_score, (45, 440))
+    road.gameDisplay.blit(text_score_number, (120, 440))
+    road.gameDisplay.blit(text_highest, (190, 440))
+    road.gameDisplay.blit(text_highest_number, (350, 440))
 
 def startGame(car, coins, box, road, nn):
     preState = nn.get_state(car, coins, box, road)
     action = [0, 1, 0]
     car.moveCar(action, car.x, car.y, coins, box, road)
     coins.moveCoins(road)
-    #box.moveBox(road)
+    box.moveBox(road)
     posState = nn.get_state(car, coins, box, road)
-    reward1 = nn.set_reward(car, car.crashed)
+    reward1 = nn.set_reward(car)
     nn.remember(preState, action, reward1, posState, car.crashed)
     nn.replay_new(nn.memory)
 
@@ -265,7 +275,7 @@ def run():
     
     record = 0
     backG = 1
-    while countGames < 100:
+    while countGames < 50:
         count = 0
         print("GAME " + str(countGames))
         road = Road(800, 450)
@@ -274,7 +284,6 @@ def run():
         myBox = road.box        
         startGame(myCar, myCoins, myBox, road, nn)
         display(myCar, myCoins, myBox, road, record, backG, count)
-    
         while not myCar.crashed:           
             nn.epsilon = 80 - countGames           
             state_old = nn.get_state(myCar, myCoins, myBox, road)
@@ -286,21 +295,25 @@ def run():
                 final_move = to_categorical(np.argmax(prediction[0]), num_classes=3)    
             myCar.moveCar(final_move, myCar.x, myCar.y, myCoins, myBox, road)
             myCoins.moveCoins(road)
-            if count > 4:            
+            if count > 0:            
                 myBox.moveBox(road)
             state_new = nn.get_state(myCar, myCoins, myBox, road)
-            reward = nn.set_reward(myCar, myCar.crashed)
+            reward = nn.set_reward(myCar)
             nn.train_short_memory(state_old, final_move, reward, state_new, myCar.crashed)
             nn.remember(state_old, final_move, reward, state_new, myCar.crashed)
-            record = getRecord(road.score, record)
+            record = getRecord(myCar.coins, record)
+            #if myCar.reached:
+               # print("Ganhou ponto")
+            #if myCar.stumbled:
+                #print("Perdeu ponto")
             display(myCar, myCoins, myBox, road, record, backG, count)
             pygame.time.wait(speed)
             backG += 1
             count += 1
             if backG == 5:
                 backG = 1
-        if countGames == 50:
-            pygame.time.wait(100)
+        for j in range(4):
+            myCar.explosionCar(road, myCar.x, myCar.y, j)
         nn.replay_new(nn.memory)
         countGames += 1
     nn.model.save_weights('weights.hdf5')
