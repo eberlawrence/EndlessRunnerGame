@@ -12,7 +12,6 @@ from random import randint
 import numpy as np
 from keras.utils import to_categorical
 import matplotlib.pyplot as plt
-import seaborn as sns
 from reinforcementLearning import deep_QNetwork
 import matplotlib.pyplot as plt
 import plotResults as pR
