@@ -9,7 +9,7 @@ from operator import add
 class deep_QNetwork(object):
 
     def __init__(self):
-        self.dimInput = 4
+        self.dimInput = 7
         self.reward = 0
         self.gamma = 0.9
         self.short_memory = np.array([])
@@ -22,12 +22,15 @@ class deep_QNetwork(object):
         self.memory = []
 
 
-    def get_state(self, car, coins, box, road):
+    def get_state(self, car, coins, road):
 
-        state = [car.change == 60, 
+        state = [car.change == 0,
+		 car.change == 60,
                  car.change == -60, 
-                 coins.x_coins <= car.x, 
-                 coins.x_coins > car.x]
+                 coins.x_coins <= car.x or coins.x_coins <= car.x + 60, 
+                 coins.x_coins >= car.x + 120 or coins.x_coins <= car.x + 60,
+		 car.x - 60 < road.width * 0.1,
+		 car.x + 180 > road.width * 0.9]
 
         for i in range(len(state)):
             if state[i]:

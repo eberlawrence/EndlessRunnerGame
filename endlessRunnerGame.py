@@ -4,8 +4,7 @@ Federal University of Uberlandia - UFU
 Biomedical Engineering Lab - BioLab
 
 To do:
-Create the coins and box asynchronously
-One or more coins and box per time
+
 
 '''
 import pygame
@@ -27,7 +26,6 @@ class Road:
         self.height = width
         self.coins = Coins(self)
         self.car = Car(self)
-        self.box = Box(self)
         
         
         self.gameDisplay = pygame.display.set_mode((width, height))
@@ -55,7 +53,7 @@ class Car(object):
         self.rotation = False
         self.change = 0
         
-    def moveCar(self, move, x, y, coins, box, road):
+    def moveCar(self, move, x, y, coins, road):
 
         if self.reachedBool:
             self.reachedBool = False
@@ -142,68 +140,13 @@ class Coins(object):
         self.y_coins += pos[self.i]
         self.i += 1
         
-        if self.i == 12:
+        if self.i == 13:
             reachOrMiss(car, self)
         if self.i == 14:
             self.firstPosition(road)                        
             self.i = 0
 
     def displayCoins(self, x, y, road):
-        if self.i == 0:
-            pass        
-        else:
-            road.gameDisplay.blit(self.image, (x, y))
-
-
-
-class Box(object):
-
-    def __init__(self, road):
-        self.i = 0
-        self.rand = 0
-        self.x_box = 0
-        self.y_box = 0
-
-    def firstPosition(self, road):
-        self.y_box = int(road.width*0.215)
-        self.rand = randint(1, 4)
-        if self.rand == 1:
-            self.x_box = (road.width * 0.4750) + 4
-        if self.rand == 2:
-            self.x_box = (road.width * 0.4875) + 4
-        if self.rand == 3:
-            self.x_box = (road.width * 0.5) + 4
-        if self.rand == 4:
-            self.x_box = (road.width * 0.5125) + 4
-
-    def moveBox(self, road):
-        pos = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48, 52]
-        esc = [0.0714, 0.1428, 0.2142, 0.2857, 0.3571, 0.4285, 0.5, 0.5714, 0.6428, 0.7142, 0.7857, 0.8571, 0.9285, 1.0]
-        if self.i == 0:
-            self.firstPosition(road)
-        if self.rand == 1:                        
-            self.imageOriginal = pygame.image.load('images/boxLL.png')
-            self.x_box -= pos[self.i] * 0.7       
-        if self.rand == 2:
-            self.imageOriginal = pygame.image.load('images/boxL.png')
-            self.x_box -= pos[self.i] * 0.1                  
-        if self.rand == 3:
-            self.imageOriginal = pygame.image.load('images/boxRR.png')
-            self.x_box += pos[self.i] * 0.1
-        if self.rand == 4:
-            self.imageOriginal = pygame.image.load('images/boxR.png')
-            self.x_box += pos[self.i] * 0.7             
-
-        self.size = list(self.imageOriginal.get_rect().size)
-        self.image = pygame.transform.scale(self.imageOriginal, (int(self.size[0] * esc[self.i]), int(self.size[1] * esc[self.i]))) 
-        self.y_box += pos[self.i]
-        self.i += 1
-
-        if self.i == 14:
-            self.firstPosition(road)                        
-            self.i = 0
-
-    def displayBox(self, x, y, road):
         if self.i == 0:
             pass        
         else:
@@ -234,7 +177,7 @@ def getRecord(score, record):
             return record
 
 
-def display(car, coins, box, road, record, background=1):
+def display(car, coins, road, record, background=1):
     if background == 1:
         road.gameDisplay.blit(road.backGround1, (0, 0))
     if background == 2:
@@ -244,7 +187,6 @@ def display(car, coins, box, road, record, background=1):
     if background == 4:
         road.gameDisplay.blit(road.backGround4, (0, 0))
 
-    box.displayBox(box.x_box, box.y_box, road)
     coins.displayCoins(coins.x_coins, coins.y_coins, road)
     car.displayCar(car.x, car.y, road)
     displayScore(car, road, record)
@@ -267,16 +209,20 @@ def displayScore(car, road, record):
     road.gameDisplay.blit(text_highest_number, (350, 440))
 
     
-def startGame(car, coins, box, road, nn):
-    preState = nn.get_state(car, coins, box, road)
+def startGame(car, coins, road, nn):
+    preState = nn.get_state(car, coins, road)
     action = [0, 1, 0]
-    car.moveCar(action, car.x, car.y, coins, box, road)
+    car.moveCar(action, car.x, car.y, coins, road)
     coins.moveCoins(car, road)
-    posState = nn.get_state(car, coins, box, road)
+    posState = nn.get_state(car, coins, road)
     reward1 = nn.set_reward(car)
     nn.remember(preState, action, reward1, posState, car.crashed)
     nn.replay_new(nn.memory)
 
+def stopGame():
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            break
 
 def run():
     pygame.init()
@@ -286,44 +232,50 @@ def run():
     backG = 1
     listReaches = []
     listMisses = []
-    while countGames < 500:
+    var = 0
+    while countGames < 200:
+        
         print("GAME " + str(countGames))
         road = Road(800, 450)
 
         myCar = road.car
-        myCoins = road.coins
-        myBox = road.box  
+        myCoins = road.coins  
       
-        startGame(myCar, myCoins, myBox, road, nn)
-        display(myCar, myCoins, myBox, road, record, backG)
+        startGame(myCar, myCoins, road, nn)
+        display(myCar, myCoins, road, record, backG)
 
-        while (myCar.reached + myCar.missed) < 200:        
-            oldState = nn.get_state(myCar, myCoins, myBox, road)
-            nn.epsilon = 20
+        while (myCar.reached + myCar.missed) < 50:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    break
+      
+            oldState = nn.get_state(myCar, myCoins, road)
+            nn.epsilon = 90 - var
             if randint(0, 100) <= nn.epsilon:
                 final_move = to_categorical(randint(0, 2), num_classes=3)
             else:
                 prediction = nn.model.predict(oldState.reshape((1, nn.dimInput)))
                 final_move = to_categorical(np.argmax(prediction[0]), num_classes=3)  
   
-            myCar.moveCar(final_move, myCar.x, myCar.y, myCoins, myBox, road)
+            myCar.moveCar(final_move, myCar.x, myCar.y, myCoins, road)
             myCoins.moveCoins(myCar, road)
            
-            newState = nn.get_state(myCar, myCoins, myBox, road)
+            newState = nn.get_state(myCar, myCoins, road)
             reward = nn.set_reward(myCar)
             nn.train_short_memory(oldState, final_move, reward, newState, myCar.crashed)
             nn.remember(oldState, final_move, reward, newState, myCar.crashed)
 
             record = getRecord(myCar.reached, record)
 
-            display(myCar, myCoins, myBox, road, record, backG)   
+            display(myCar, myCoins, road, record, backG)   
        
             pygame.time.wait(speed)
 
             backG += 1
             if backG == 5:
                 backG = 1
-
+        if var < 80:
+            var += 1
         listReaches.append(myCar.reached)
         listMisses.append(myCar.missed)
         if myCar.reached <= myCar.missed:        
