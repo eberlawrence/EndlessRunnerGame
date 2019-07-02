@@ -9,13 +9,14 @@ from operator import add
 class deep_QNetwork(object):
 
     def __init__(self):
-        self.dimInput = 7
+        self.dimInput = 5
         self.reward = 0
         self.gamma = 0.9
         self.short_memory = np.array([])
         self.agent_target = 1
         self.agent_predict = 0
         self.learning_rate = 0.0005
+        # self.model = self.network('weights.hdf5')
         self.model = self.network()
         self.epsilon = 0
         self.actual = []
@@ -25,12 +26,10 @@ class deep_QNetwork(object):
     def get_state(self, car, coins, road):
 
         state = [car.change == 0,
-		 car.change == 60,
-                 car.change == -60, 
+		 car.change == 40,
+                 car.change == -40, 
                  coins.x_coins <= car.x or coins.x_coins <= car.x + 60, 
-                 coins.x_coins >= car.x + 120 or coins.x_coins <= car.x + 60,
-		 car.x - 60 < road.width * 0.1,
-		 car.x + 180 > road.width * 0.9]
+                 coins.x_coins >= car.x + 120 or coins.x_coins <= car.x + 60]
 
         for i in range(len(state)):
             if state[i]:

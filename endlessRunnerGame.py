@@ -16,7 +16,7 @@ import seaborn as sns
 from reinforcementLearning import deep_QNetwork
 import matplotlib.pyplot as plt
 
-speed = 1
+speed = 80
 
 class Road:
     pygame.display.set_caption('Endless Runner Game 1.0')
@@ -61,9 +61,9 @@ class Car(object):
         if np.array_equal(move, [1, 0, 0]):
             self.change = 0
         elif np.array_equal(move, [0, 1, 0]):
-            self.change = 60
+            self.change = 40
         elif np.array_equal(move, [0, 0, 1]):
-            self.change = -60
+            self.change = -40
         self.x = x + self.change
         crash(self, road)
 
@@ -140,7 +140,7 @@ class Coins(object):
         self.y_coins += pos[self.i]
         self.i += 1
         
-        if self.i == 13:
+        if self.i == 12:
             reachOrMiss(car, self)
         if self.i == 14:
             self.firstPosition(road)                        
@@ -157,6 +157,7 @@ def reachOrMiss(car, coins):
     if car.x <= coins.x_coins and car.x + 120 >= coins.x_coins + 34:
         car.reached += 1
         car.reachedBool = True
+        coins.i = 0
         print("reached", car.reached)
     else:
         car.missed += 1
@@ -233,6 +234,7 @@ def run():
     listReaches = []
     listMisses = []
     var = 0
+    var2 = False
     while countGames < 200:
         
         print("GAME " + str(countGames))
@@ -274,8 +276,11 @@ def run():
             backG += 1
             if backG == 5:
                 backG = 1
-        if var < 80:
+        if var < 85 and var2 == True:
             var += 1
+            var2 = False
+        else:
+            var2 = True
         listReaches.append(myCar.reached)
         listMisses.append(myCar.missed)
         if myCar.reached <= myCar.missed:        
@@ -295,4 +300,6 @@ def run():
     nn.model.save_weights('weights.hdf5')
 
 run()
+
+
 
