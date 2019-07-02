@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from reinforcementLearning import deep_QNetwork
 import matplotlib.pyplot as plt
+import plotResults as pR
 
 speed = 80
 
@@ -233,9 +234,9 @@ def run():
     backG = 1
     listReaches = []
     listMisses = []
-    var = 0
+    var = 90
     var2 = False
-    while countGames < 200:
+    while countGames < 500:
         
         print("GAME " + str(countGames))
         road = Road(800, 450)
@@ -276,7 +277,7 @@ def run():
             backG += 1
             if backG == 5:
                 backG = 1
-        if var < 85 and var2 == True:
+        if var < 88 and var2 == True:
             var += 1
             var2 = False
         else:
@@ -292,10 +293,7 @@ def run():
         nn.replay_new(nn.memory)
         countGames += 1
 
-    print(listReaches)
-    print(listMisses)
-    plt.plot(listReaches)
-    plt.plot(listMisses)
+    pR.plotResults(listReaches, listMisses, 500)
     plt.show()
     nn.model.save_weights('weights.hdf5')
 

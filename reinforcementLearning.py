@@ -16,8 +16,8 @@ class deep_QNetwork(object):
         self.agent_target = 1
         self.agent_predict = 0
         self.learning_rate = 0.0005
-        # self.model = self.network('weights.hdf5')
-        self.model = self.network()
+        self.model = self.network('weights.hdf5')
+        #self.model = self.network()
         self.epsilon = 0
         self.actual = []
         self.memory = []
