@@ -233,7 +233,7 @@ def run():
     backG = 1
     listReaches = []
     listMisses = []
-    var = 90
+    var = 0
     var2 = False
     while countGames < 500:
         

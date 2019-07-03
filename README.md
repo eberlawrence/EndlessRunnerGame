@@ -12,7 +12,7 @@ This game was developed in Python (version 3.6).
   * matplotlib.
 
 ### Game before training:
-![gif](https://github.com/eberlawrence/EndlessRunnerGame/blob/master/images/video.gif)
+![gif](https://github.com/eberlawrence/EndlessRunnerGame/blob/master/images/video1.gif)
 
 ### Game after training:
 ![gif](https://github.com/eberlawrence/EndlessRunnerGame/blob/master/images/video2.gif)
