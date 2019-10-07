@@ -16,7 +16,7 @@ from reinforcementLearning import deep_QNetwork
 import matplotlib.pyplot as plt
 import plotResults as pR
 
-speed = 80
+speed = 60
 
 class Road:
     pygame.display.set_caption('Endless Runner Game 1.0')
