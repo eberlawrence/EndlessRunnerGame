@@ -16,8 +16,8 @@ class deep_QNetwork(object):
         self.agent_target = 1
         self.agent_predict = 0
         self.learning_rate = 0.0005
-        self.model = self.network('weights.hdf5')
-        # self.model = self.network()
+        # self.model = self.network('weights.hdf5')
+        self.model = self.network()
         self.epsilon = 0
         self.actual = []
         self.memory = []
@@ -27,8 +27,8 @@ class deep_QNetwork(object):
 
         state = [car.change == 0,
 		 car.change == 40,
-                 car.change == -40, 
-                 coins.x_coins <= car.x or coins.x_coins <= car.x + 60, 
+                 car.change == -40,
+                 coins.x_coins <= car.x or coins.x_coins <= car.x + 60,
                  coins.x_coins >= car.x + 120 or coins.x_coins <= car.x + 60]
 
         for i in range(len(state)):
@@ -36,7 +36,7 @@ class deep_QNetwork(object):
                 state[i] = 1
             else:
                 state[i] = 0
-        
+
         self.dimInput = len(state)
 
         return np.asarray(state)
@@ -45,7 +45,7 @@ class deep_QNetwork(object):
         self.reward = 0
         if car.crashed:
             self.reward = -5
-            return self.reward       
+            return self.reward
         if car.reachedBool:
             self.reward = 10
         return self.reward
@@ -89,7 +89,3 @@ class deep_QNetwork(object):
         target_f = self.model.predict(state.reshape((1, self.dimInput)))
         target_f[0][np.argmax(action)] = target
         self.model.fit(state.reshape((1, self.dimInput)), target_f, epochs=1, verbose=0)
-
-
-
-
